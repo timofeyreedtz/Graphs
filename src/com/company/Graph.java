@@ -96,7 +96,7 @@ public class Graph {
                         break;
                 }
                 for(int k = from;k < num_of_weights;k++){
-                    while(graph.get(k).getFrom() > graph.get(k).getTo()){ /*
+                    while(graph.get(k).getFrom()-1 > graph.get(k).getTo()-1){ /*
                     проверка на цикл: если нашли необработанный цикл, игнорируем его, но уменьшаем кол-во исходящих путей в нем на 1*/
                         if(k > i){
                             tops_array_from[graph.get(k).getFrom()-1]--;
@@ -104,10 +104,16 @@ public class Graph {
                             count[graph.get(k).getFrom()-1]++;
                         }
                         k++;
+                        if(k == num_of_weights){
+                            break;              // если последний узел - цикл, выходим
+                        }
 
                     }/*
                     распределяем объем в нужные вершины
                     */
+                    if(k == num_of_weights){  // если последний узел - цикл, выходим
+                        break;
+                    }
                     size  = size_array_for_cycle_points[graph.get(k).getFrom()-1]/tops_array_from[graph.get(k).getFrom()-1] ;
                     if(size > graph.get(k).getWeight()) graph.get(k).setWeight(size);
                     size_array_for_cycle_points[graph.get(k).getTo()-1] += size;
