@@ -5,12 +5,15 @@ import java.util.Scanner;
 public class Main {
 
     public static void main(String[] args) {
-        Graph g = new Graph(5,8);
+        Graph g = new Graph(5,7);
         g.addGraphNode(1,2,4,0,0);
-        g.addGraphNode(1,3,4,0,0);
+       // g.addGraphNode(1,3,4,0,0);
         g.addGraphNode(1,4,4,0,0);
         g.addGraphNode(2,3,4,0,0);
+       // g.addGraphNode(2,4,4,0,0);
+       // g.addGraphNode(2,5,4,0,0);
         g.addGraphNode(3,1,4,0,0);
+       // g.addGraphNode(3,5,4,0,0);
         g.addGraphNode(4,1,1,0,0);
         g.addGraphNode(4,3,1,0,0);
         g.addGraphNode(4,5,1,0,0);

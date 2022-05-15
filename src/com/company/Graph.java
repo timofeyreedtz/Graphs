@@ -5,7 +5,30 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
+class ThreadStack{
+    private Thread thread;
+    private int from;
+    ThreadStack(int from, Thread thread){
+        this.from = from;
+        this.thread = thread;
+    }
 
+    public int getFrom() {
+        return from;
+    }
+
+    public void setFrom(int from) {
+        this.from = from;
+    }
+
+    public Thread getThread() {
+        return thread;
+    }
+
+    public void setThread(Thread thread) {
+        this.thread = thread;
+    }
+}
 class GraphNode{
     private int from,to;
     private double weight,size,delay ;
@@ -50,9 +73,9 @@ class GraphNode{
 }
 public class Graph {
     private int num_of_tops, num_of_weights;
-    private final List<List<Integer>> adj;
+    private   List<List<Integer>> adj;
     private ArrayList<GraphNode> graph = new ArrayList<>();
-    private final ArrayList<Thread> thread = new ArrayList<>();
+    private final ArrayList<ThreadStack> thread = new ArrayList<>();
     private final double[] size_array;
     private final boolean[] isWorking;
     private final double[][] matrix;
@@ -80,16 +103,6 @@ public class Graph {
                                  boolean[] recStack)
     {
 
-        // Mark the current node as visited and
-        // part of recursion stack
-        /*if (recStack[i] )
-            return true;
-
-        if (visited[i])
-            return false;
-
-        visited[i] = true;*/
-
         recStack[i] = true;
         List<Integer> children = adj.get(i);
 
@@ -104,9 +117,10 @@ public class Graph {
         visited[i] = true;
         return false;
     }
-    private boolean isNeedToBeBlocked(int i,int from){
-        if( adj.get(graph.get(i).getFrom()-1).size() == 0){
-            isWorking[i] = false;
+    private void isNeedToBeBlocked(int i,int from){
+
+        if( adj.get(graph.get(i).getFrom()-1).size() == 0 && from != num_of_tops) {
+            //isWorking[i] = false;
             for (int k = 0; k < num_of_weights; k++) {
                 if (graph.get(k).getTo() == graph.get(i).getFrom()) {
                     isWorking[k] = false;
@@ -114,34 +128,53 @@ public class Graph {
                 }
             }
         }
-        else if(adj.get(graph.get(i).getFrom()-1).size() == 1 && from != graph.get(i).getFrom()){
+        else if(adj.get(graph.get(i).getFrom()-1).size() == 1 && from != graph.get(i).getFrom() /*&& from != num_of_tops*/ ){
             if(!isWorking[i]){
                 for (int k = 0; k < num_of_weights; k++){
-                    if (graph.get(k).getTo() == graph.get(i).getFrom()) {
+                    if (graph.get(k).getTo() == graph.get(i).getFrom() && isWorking[k]) {
                         isWorking[k] = false;
                         isNeedToBeBlocked(k,graph.get(i).getFrom());
                     }
                 }
             }
         }
-        return false;
     }
     private void isCyclic() {
-        fillAdj();
-        // Mark all the vertices as not visited and
-        // not part of recursion stack
         boolean[] visited = new boolean[num_of_tops];
         boolean[] recStack = new boolean[num_of_tops];
-        // Call the recursive helper function to
-        // detect cycle in different DFS trees
         for (int i = 0; i < num_of_weights; i++) {
-            if (graph.get(i).getFrom() > graph.get(i).getTo()) {
-                if (isCyclicUtil(graph.get(i).getFrom() - 1, visited, recStack)) {
+            if (graph.get(i).getFrom() == num_of_tops){
+                isWorking[i] = false;
+            }
+        }
+        fillAdj();
+        for (int i = 0; i < num_of_weights; i++){
+            if (graph.get(i).getFrom() > graph.get(i).getTo() && calcTops(i) != 1) {
+                for (Integer c:adj.get(graph.get(i).getTo() - 1))
+                    if(graph.get(i).getFrom()-1 == c){
+                        isWorking[i] = false;
+                        adj.get(graph.get(i).getFrom() - 1).remove((Integer) (graph.get(i).getTo()-1));
+                        break;
+                    }
+            }
+            else if(calcTops(i) == 1){
+                if(isCyclicUtil(graph.get(i).getTo() - 1,visited,recStack)){
                     isWorking[i] = false;
                     Integer in = graph.get(i).getTo()-1;
                     adj.get(graph.get(i).getFrom()-1).remove(in);
                     isNeedToBeBlocked(i,(graph.get(i).getFrom()));
+                }
+            }
+        }
 
+        for (int i = 0; i < num_of_weights; i++) {
+            if (graph.get(i).getFrom() > graph.get(i).getTo() ) {
+                if (isCyclicUtil(graph.get(i).getTo() - 1, visited, recStack)
+                       && isWorking[i] ){
+                    isWorking[i] = false;
+                    Integer in = graph.get(i).getTo()-1;
+                    adj.get(graph.get(i).getFrom()-1).remove(in);
+                    isNeedToBeBlocked(i,(graph.get(i).getFrom()));
                 }
             }
         }
@@ -157,76 +190,88 @@ public class Graph {
     }
     private  void FillTopsArr(int [] arr) {
         for (int i = 0; i < num_of_weights; i++) {
-            if( !isWorking[i]){
-                i++;
+            if( isWorking[i]) {
+                arr[graph.get(i).getFrom()-1]++;
             }
-            if(i == num_of_weights){
-                break;
-            }
-            arr[graph.get(i).getFrom()-1]++;
         }
     }
     public void OptimizeSize(double V){
         isCyclic();
-        size_array[0] = V;
         FillTopsArr(tops_array_from);
-        Optimize();
+        size_array[0] = V;
+        /*for (int i = 0; i < num_of_weights; i++){
+            Optimize(i);
+        }*/
+        Run();
         maxFlow();
+    }
+
+    private int findTop(int from){
+        for(int i = 0;i < num_of_weights;i++){
+            if(graph.get(i).getFrom() == from){
+                return i;
+            }
+        }
+        return 0;
     }
     private int calcTops(int i){
         int k = 0;
         for (int j = 0;j < num_of_weights; j++){
-            if (graph.get(i).getFrom() == graph.get(j).getFrom()){
+            if (graph.get(i).getFrom() == graph.get(j).getFrom() && isWorking[j]){
                 k++;
             }
         }
         return k;
     }
-  /*  private void Run()  {
-        int k = 0;
-        for(int i = 0;i < num_of_weights;i++){
-            if (isWorking[i]){
-                int finalI = i;
-                thread.add(new Thread(() -> Optimize(finalI)));
+    private  void Optimize(int i) {
+        if(isWorking[i]){
+            if(graph.get(i).getFrom() > graph.get(i).getTo()){
+                optimizeHelp(i);
+                int from = findTop(graph.get(i).getTo());
+                for(int k = from; k < i;k++){
+                    Optimize(k);
+                }
+            }
+            else{
+                optimizeHelp(i);
             }
         }
-        for(int i = 0;i < num_of_tops;i++){
-            int to = tops_array_from[i];
-            if(i == 0){
-                k = 0;
+    }
+
+    private void optimizeHelp(int i) {
+        double size;
+        size  = size_array[graph.get(i).getFrom()-1]/tops_array_from[graph.get(i).getFrom()-1] ;
+        graph.get(i).setSize(size);
+        matrix[graph.get(i).getFrom()-1][graph.get(i).getTo()-1] += size;
+        graph.get(i).setDelay(Math.exp(size));
+        size  = checkIfOverload(size, i,size_array);
+        System.out.println("from " + graph.get(i).getFrom()  + " to " + graph.get(i).getTo()  + ": "+ size);
+        size_array[graph.get(i).getTo()-1] += size;
+    }
+
+    private void Run() {
+        for(int i = 0;i < num_of_weights;i++){
+            if(isWorking[i]){
+                int finalI = i;
+                thread.add(new ThreadStack(graph.get(i).getFrom(),new Thread(()->Optimize(finalI))));
             }
-            else k+=calcTops(k);
-            for(int j = k; j < k + to; j++){
-                thread.get(j).start();
+        }
+        for(int i = 0;i < thread.size();i++){
+            int top = thread.get(i).getFrom();
+            while(thread.get(i).getFrom() == top){
+                thread.get(i).getThread().start();
+                i++;
+                if(i == thread.size()){
+                    break;
+                }
             }
+            i--;
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-    }*/
-
-    private  void Optimize() {
-        for(int i = 0;i < num_of_weights;i++){
-            if(isWorking[i]){
-                double size;
-                size  = size_array[graph.get(i).getFrom()-1]/calcTops(i) ;
-                graph.get(i).setSize(size);
-                matrix[graph.get(i).getFrom()-1][graph.get(i).getTo()-1] = size;
-                graph.get(i).setDelay(Math.exp(size));
-                size  = checkIfOverload(size,i,size_array); // обработка в случае нехватки пропускной способности канала
-                System.out.println("from " + graph.get(i).getFrom()  + " to " + graph.get(i).getTo()  + ": "+ size);
-                size_array[graph.get(i).getTo()-1] += size;
-                if(i == num_of_weights-1){
-                    size_array[graph.get(i).getFrom()-1] = 0;
-                }
-                else if (graph.get(i).getFrom() != graph.get(i+1).getFrom() ){
-                    size_array[graph.get(i).getFrom()-1] = 0;
-                }
-            }
-        }
-
     }
     private double checkIfOverload(double size, int i,double [] arr) {
         while (size > graph.get(i).getWeight()){
