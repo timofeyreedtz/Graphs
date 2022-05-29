@@ -5,17 +5,14 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         Graph g = new Graph(5,8);
-        g.addGraphNode(1,2,1,0,0);
-        g.addGraphNode(1,3,2,0,0);
-       // g.addGraphNode(1,4,4,0,0);
-        g.addGraphNode(2,1,3,0,0);
-        g.addGraphNode(2,4,3,0,0);
-        g.addGraphNode(2,5,3,0,0);
-       // g.addGraphNode(3,2,4,0,0);
-        g.addGraphNode(3,4,4,0,0);
-        g.addGraphNode(3,5,3,0,0);
-        g.addGraphNode(4,1,3,0,0);
-      //  g.addGraphNode(4,5,3,0,0);
+        g.addGraphNode(1,2,1);
+        g.addGraphNode(1,3,2);
+        g.addGraphNode(2,1,3);
+        g.addGraphNode(2,4,4);
+        g.addGraphNode(2,5,4);
+        g.addGraphNode(3,4,1);
+        g.addGraphNode(3,5,2);
+        g.addGraphNode(4,1,3);
         Scanner s = new Scanner(System.in);
         System.out.println("Введите входной объем данных: ");
         double V = s.nextDouble();
@@ -24,7 +21,7 @@ public class Main {
         g.OptimizeSize(V);
         long finish = System.nanoTime();
         long elapsed = finish - start;
-        System.out.format("Прошло времени, нс: %.5f\n" ,(double)elapsed/ 1_000_000_000);
+     //   System.out.format("Прошло времени, нс: %.5f\n" ,(double)elapsed/ 1_000_000_000);
         g.printGraph();
     }
 }
