@@ -208,7 +208,7 @@ public class Graph {
             adj.add(new LinkedList<>());
             tops_array_from[i] = 0;
             nodeProcessing.add(new NodeProcessing(0,0,0,0,0,
-                    0,0,0,0,true,(Math.random()*100),0));
+                    0,0,0,0,true,10,0));
             for (int j = 0;j < num_of_tops;j++){
                 matrix[i][j] = 0;
             }
@@ -335,15 +335,15 @@ public class Graph {
     public void OptimizeSize(double V){
         isCyclic();
         FillTopsArr(tops_array_from);
-        for (int i = 0; i < num_of_tops;i++){
-            nodeProcessing.get(i).setNumber_of_working_nodes(tops_array_from[i]);
-        }
         size_array[0] = V;
         nodeProcessing.get(0).setQueue(V);
+        if(nodeProcessing.get(0).getMax_size_of_queue() < V){
+            size_array[0] = nodeProcessing.get(0).getMax_size_of_queue();
+        }
         for(int i =0;i<num_of_weights;i++){
             Optimize(i);
         }
-      //  Run();
+        FillTopsArr(tops_array_from);
         maxFlow();
         printProcess();
         calcReliability();
@@ -395,13 +395,14 @@ public class Graph {
                 "Вероятность безотказной работы системы = %.5f\n",p_weight,p_node,p);
     }
     private  void Optimize(int i) {
-        if(isWorking[i] && nodeProcessing.get(graph.get(i).getTo()-1).isWorking() ){
+        if(isWorking[i]){
             if(graph.get(i).getFrom() > graph.get(i).getTo()){
                 optimizeHelp(i);
                 int from = findTop(graph.get(i).getTo());
-                tops_array_from[graph.get(i).getTo()-1] = calcTops(from);
+                //tops_array_from[graph.get(i).getTo()-1] = calcTops(from);
                 for(int k = from; k < i;k++){
                     Optimize(k);
+
                 }
             }
             else{
@@ -413,48 +414,54 @@ public class Graph {
 
     private void optimizeHelp(int i) {
         double size;
-        size  = nodeProcessing.get(graph.get(i).getFrom()-1).getQueue()/tops_array_from[graph.get(i).getFrom()-1] ;
-        int k =  1;
-        nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(k);
-        if(size > graph.get(i).getWeight()){
-            size = checkIfOverload(size,i);
-            setNodeProcessing(i,size);
-            tops_array_from[graph.get(i).getFrom()-1]--;
-        }
-        else {
-            setNodeProcessing(i,size);
-            tops_array_from[graph.get(i).getFrom()-1]--;
-        }
-        nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(0);
-        nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(0);
-        nodeProcessing.get(graph.get(i).getTo()-1).setSize(0);
-        nodeProcessing.get(graph.get(i).getTo()-1).setAverage_time_for_one_thread(0);
-        nodeProcessing.get(graph.get(i).getTo()-1).setLambda(0);
-    }
-
-    private void setNodeProcessing(int i, double size) {
-        nodeProcessing.get(graph.get(i).getTo()-1).setSize(nodeProcessing.get(graph.get(i).getTo()-1).getSize()+size);
-        nodeProcessing.get(graph.get(i).getTo()-1).setQueue(nodeProcessing.get(graph.get(i).getTo()-1).getQueue()+size);
-        if(nodeProcessing.get(graph.get(i).getTo()-1).getQueue() >  nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue()){
-            isWorking[i] = false;
-            nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_working_nodes(nodeProcessing.get(graph.get(i).getFrom()-1).getNumber_of_working_nodes()-1);
-            double after_queue = nodeProcessing.get(graph.get(i).getTo()-1).getQueue();
-            nodeProcessing.get(graph.get(i).getTo()-1).setQueue( nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
-            nodeProcessing.get(graph.get(i).getFrom()-1).setQueue(after_queue-nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
-            if(nodeProcessing.get(graph.get(i).getTo()-1).getNumber_of_working_nodes() == 0){
-                nodeProcessing.get(graph.get(i).getTo()-1).setWorking(false);
+        size  = size_array[graph.get(i).getFrom()-1]/tops_array_from[graph.get(i).getFrom()-1] ;
+        nodeProcessing.get(graph.get(i).getTo()-1).setQueue((nodeProcessing.get(graph.get(i).getTo()-1).getQueue()+size));
+        if(nodeProcessing.get(graph.get(i).getTo()-1).getQueue() > nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue()){
+            nodeProcessing.get(graph.get(i).getTo()-1).setWorking(false);
+            for (int k = i; k < findTop(graph.get(i).getTo());k++){
+                if(graph.get(k).getTo() == graph.get(i).getTo()){
+                    isWorking[k] = false;
+                }
+            }
+            nodeProcessing.get(graph.get(i).getTo()-1).setQueue(nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
+            matrix[graph.get(i).getFrom()-1][graph.get(i).getTo()-1] += nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue();
+            int k = nodeProcessing.get(graph.get(i).getTo()-1).getNumber_of_threads() + 1;
+            nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(k);
+            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue()/graph.get(i).getWeight());
+            nodeProcessing.get(graph.get(i).getTo()-1).setSize(nodeProcessing.get(graph.get(i).getTo()-1).getSize()+nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
+            size  = checkIfOverload(nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue(), i,size_array);
+            System.out.println("from " + graph.get(i).getFrom()  + " to " + graph.get(i).getTo()  + ": "+ nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
+            size_array[graph.get(i).getTo()-1] += nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue();
+            nodeProcessing.get(graph.get(i).getTo()-1).calcTime();
+            nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(0);
+            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(0);
+            if(i == num_of_weights-1){
+                size_array[graph.get(i).getFrom()-1] = 0;
+            }
+            else if (graph.get(i).getFrom() != graph.get(i+1).getFrom() ){
+                size_array[graph.get(i).getFrom()-1] = 0;
             }
         }
         else{
-            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(nodeProcessing.get(graph.get(i).getTo()-1).getSum_of_time()+ size/graph.get(i).getWeight());
             matrix[graph.get(i).getFrom()-1][graph.get(i).getTo()-1] += size;
-            nodeProcessing.get(graph.get(i).getTo()-1).calcTime();
-            nodeProcessing.get(graph.get(i).getFrom()-1).setQueue(nodeProcessing.get(graph.get(i).getFrom()-1).getQueue()-size);
+            int k = nodeProcessing.get(graph.get(i).getTo()-1).getNumber_of_threads() + 1;
+            nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(k);
+            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(nodeProcessing.get(graph.get(i).getTo()-1).getSum_of_time() + 1/graph.get(i).getWeight());
+            nodeProcessing.get(graph.get(i).getTo()-1).setSize(nodeProcessing.get(graph.get(i).getTo()-1).getSize()+size);
+            size  = checkIfOverload(size, i,size_array);
             System.out.println("from " + graph.get(i).getFrom()  + " to " + graph.get(i).getTo()  + ": "+ size);
+            size_array[graph.get(i).getTo()-1] += size;
+            nodeProcessing.get(graph.get(i).getTo()-1).calcTime();
+            nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(0);
+            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(0);
+            if(i == num_of_weights-1){
+                size_array[graph.get(i).getFrom()-1] = 0;
+            }
+            else if (graph.get(i).getFrom() != graph.get(i+1).getFrom() ){
+                size_array[graph.get(i).getFrom()-1] = 0;
+            }
         }
-
     }
-
     private void Run() {
         for(int i = 0;i < num_of_weights;i++){
             if(isWorking[i]){
@@ -484,12 +491,14 @@ public class Graph {
             }
         }
     }
-    private double checkIfOverload(double size, int i) {
-        while (size > graph.get(i).getWeight()){
-            int k = nodeProcessing.get(graph.get(i).getTo()-1).getNumber_of_threads()+1;
-            nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(k);
-            setNodeProcessing(i,graph.get(i).getWeight());
+    private double checkIfOverload(double size, int i,double [] arr) {
+        while (size > graph.get(i).getWeight()) {
+            int k = nodeProcessing.get(graph.get(i).getTo() - 1).getNumber_of_threads() + 1;
+            nodeProcessing.get(graph.get(i).getTo() - 1).setNumber_of_threads(k);
+            nodeProcessing.get(graph.get(i).getTo() - 1).setSum_of_time(nodeProcessing.get(graph.get(i).getTo() - 1).getSum_of_time() + 1 / graph.get(i).getWeight());
             size -= graph.get(i).getWeight();
+            System.out.println("from " + graph.get(i).getFrom() + " to " + graph.get(i).getTo() + ": " + graph.get(i).getWeight());
+            arr[graph.get(i).getTo() - 1] += graph.get(i).getWeight();
         }
         return size;
     }

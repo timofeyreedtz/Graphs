@@ -5,14 +5,14 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         Graph g = new Graph(5,8);
-        g.addGraphNode(1,2,1);
-        g.addGraphNode(1,3,2);
-        g.addGraphNode(2,1,3);
-        g.addGraphNode(2,4,4);
-        g.addGraphNode(2,5,4);
-        g.addGraphNode(3,4,1);
-        g.addGraphNode(3,5,2);
-        g.addGraphNode(4,1,3);
+        g.addGraphNode(1,2,20);
+        g.addGraphNode(1,3,20);
+        g.addGraphNode(2,4,20);
+        g.addGraphNode(2,5,40);
+        g.addGraphNode(3,2,10);
+        g.addGraphNode(3,4,10);
+        g.addGraphNode(3,5,20);
+        g.addGraphNode(4,5,30);
         Scanner s = new Scanner(System.in);
         System.out.println("Введите входной объем данных: ");
         double V = s.nextDouble();
