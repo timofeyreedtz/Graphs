@@ -4,9 +4,10 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Graph g = new Graph(5,8);
+        Graph g = new Graph(5,9);
         g.addGraphNode(1,2,20);
         g.addGraphNode(1,3,20);
+        g.addGraphNode(1,4,20);
         g.addGraphNode(2,4,20);
         g.addGraphNode(2,5,40);
         g.addGraphNode(3,2,10);
