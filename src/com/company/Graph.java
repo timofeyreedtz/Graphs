@@ -4,55 +4,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-class ThreadStack{
-    private Thread thread;
-    private int from;
-    ThreadStack(int from, Thread thread){
-        this.from = from;
-        this.thread = thread;
-    }
-
-    public int getFrom() {
-        return from;
-    }
-
-    public void setFrom(int from) {
-        this.from = from;
-    }
-
-    public Thread getThread() {
-        return thread;
-    }
-
-    public void setThread(Thread thread) {
-        this.thread = thread;
-    }
-}
 class NodeProcessing{
-    private  double lambda,size,timeProcessing,average_time_for_one_thread,sum_of_time,queue,sum_of_size, max_size_of_queue, max_size,total_size;
-    private int top,number_of_threads,number_of_working_nodes;
+    private  double lambda,size,timeProcessing,average_time_for_one_thread,sum_of_time, max_size,total_size;
+    private int top,number_of_threads;
     private boolean isWorking;
     NodeProcessing(){
 
     }
-    NodeProcessing(double lambda,double size,double timeProcessing,
-                   int number_of_threads,double average_time_for_one_thread,int top,double sum_of_time,
-                   double queue, double sum_of_size,boolean isWorking,double max_size_of_queue,int number_of_working_nodes,double max_size,
-                   double total_size){
-        this.lambda = lambda;
-        this.size = size;
-        this.timeProcessing = timeProcessing;
-        this.number_of_threads = number_of_threads;
-        this.average_time_for_one_thread = average_time_for_one_thread;
-        this.top = top;
-        this.sum_of_time = sum_of_time;
-        this.queue = queue;
-        this.sum_of_size = sum_of_size;
+    NodeProcessing(boolean isWorking,double max_size){
         this.isWorking = isWorking;
-        this.max_size_of_queue = max_size_of_queue;
-        this.number_of_working_nodes = number_of_working_nodes;
         this.max_size = max_size;
-        this.total_size = total_size;
     }
     public void calcTime(){
         average_time_for_one_thread = sum_of_time/number_of_threads;
@@ -117,13 +78,6 @@ class NodeProcessing{
         this.sum_of_time = sum_of_time;
     }
 
-    public double getSum_of_size() {
-        return sum_of_size;
-    }
-
-    public void setSum_of_size(double sum_of_size) {
-        this.sum_of_size = sum_of_size;
-    }
 
     public boolean isWorking() {
         return isWorking;
@@ -131,30 +85,6 @@ class NodeProcessing{
 
     public void setWorking(boolean working) {
         isWorking = working;
-    }
-
-    public double getQueue() {
-        return queue;
-    }
-
-    public void setQueue(double queue) {
-        this.queue = queue;
-    }
-
-    public double getMax_size_of_queue() {
-        return max_size_of_queue;
-    }
-
-    public void setMax_size_of_queue(double max_size_of_queue) {
-        this.max_size_of_queue = max_size_of_queue;
-    }
-
-    public int getNumber_of_working_nodes() {
-        return number_of_working_nodes;
-    }
-
-    public void setNumber_of_working_nodes(int number_of_working_nodes) {
-        this.number_of_working_nodes = number_of_working_nodes;
     }
 
     public double getMax_size() {
@@ -206,8 +136,7 @@ public class Graph {
     private int num_of_tops, num_of_weights;
     private final List<List<Integer>> adj;
     private ArrayList<GraphNode> graph = new ArrayList<>();
-    private ArrayList<NodeProcessing> nodeProcessing = new ArrayList<>(num_of_tops);
-    private final ArrayList<ThreadStack> thread = new ArrayList<>();
+    private final ArrayList<NodeProcessing> nodeProcessing = new ArrayList<>();
     private final double[] size_array;
     private final boolean[] isWorking;
     private final double[][] matrix;
@@ -230,16 +159,6 @@ public class Graph {
                 matrix[i][j] = 0;
             }
         }
-        nodeProcessing.add(new NodeProcessing(0,0,0,1,0,
-                0,0,0,0,true,1000,0,1000,0));
-        nodeProcessing.add(new NodeProcessing(0,0,0,0,0,
-                0,0,0,0,true,29,0,29,0));
-        nodeProcessing.add(new NodeProcessing(0,0,0,0,0,
-                0,0,0,0,true,6,0,6,0));
-        nodeProcessing.add(new NodeProcessing(0,0,0,0,0,
-                0,0,0,0,true,3,0,3,0));
-        nodeProcessing.add(new NodeProcessing(0,0,0,0,0,
-                0,0,0,0,true,100,0,100,0));
     }
     private boolean isCyclicUtil(int i, boolean[] visited,boolean[] recStack)
     {
@@ -265,7 +184,7 @@ public class Graph {
                 }
             }
         }
-        else if(adj.get(graph.get(i).getFrom()-1).size() == 1 && from != graph.get(i).getFrom() /*&& from != num_of_tops*/ ){
+        else if(adj.get(graph.get(i).getFrom()-1).size() == 1 && from != graph.get(i).getFrom() ){
             if(!isWorking[i]){
                 for (int k = num_of_weights-1; k > 0; k--){
                     if (graph.get(k).getTo() == graph.get(i).getFrom() && isWorking[k]) {
@@ -362,31 +281,23 @@ public class Graph {
             }
         }
     }
-    private boolean IsSizeArrayFull(){
-        for (int i = 0;i < num_of_tops-1;i++){
-            if(size_array[i] != 0) {
-                return true;
-            }
-        }
-        return false;
-    }
     public void OptimizeSize(double V){
         isCyclic();
         FillTopsArr(tops_array_from);
         size_array[0] = V;
 
-        if(nodeProcessing.get(0).getMax_size_of_queue() < V){
-            size_array[0] = nodeProcessing.get(0).getMax_size_of_queue();
+        if(nodeProcessing.get(0).getMax_size() < V){
+            size_array[0] = nodeProcessing.get(0).getMax_size();
         }
         for(int i =0;i<num_of_weights;i++){
             Optimize(i);
         }
         FillTopsArr(tops_array_from);
         maxFlow();
-        nodeProcessing.get(0).setQueue(V);
         nodeProcessing.get(0).setNumber_of_threads(1);
         nodeProcessing.get(0).setSize(V);
-        nodeProcessing.get(0).setSum_of_time(V);
+        nodeProcessing.get(0).setSum_of_time(0.05);
+        //nodeProcessing.get(0).calcTime();
         printProcess();
         calcReliability();
     }
@@ -397,7 +308,7 @@ public class Graph {
             System.out.format("Время обработки : %.10f\n" ,nodeProcessing.get(i).getTimeProcessing());
         }
         sum = sum/num_of_tops;
-        System.out.format("Cреднее время обработки = %.5f\n",sum);
+        System.out.format("Cреднее время обработки = %.10f\n",sum);
     }
     private int findTop(int from){
         for(int i = 0;i < num_of_weights;i++){
@@ -448,9 +359,8 @@ public class Graph {
         double size;
         double before_queue = nodeProcessing.get(graph.get(i).getTo()-1).getTotal_size();
         size  = size_array[graph.get(i).getFrom()-1]/tops_array_from[graph.get(i).getFrom()-1] ;
-        nodeProcessing.get(graph.get(i).getTo()-1).setQueue((nodeProcessing.get(graph.get(i).getTo()-1).getQueue()+size));
         nodeProcessing.get(graph.get(i).getTo()-1).setTotal_size((nodeProcessing.get(graph.get(i).getTo()-1).getTotal_size()+size));
-        if(nodeProcessing.get(graph.get(i).getTo()-1).getTotal_size() >= nodeProcessing.get(graph.get(i).getTo()-1).getMax_size()){
+        if(nodeProcessing.get(graph.get(i).getTo()-1).getTotal_size() > nodeProcessing.get(graph.get(i).getTo()-1).getMax_size()){
             nodeProcessing.get(graph.get(i).getTo()-1).setWorking(false);
             isWorking[i] = false;
             for (int k = i+1; k < num_of_weights;k++){
@@ -460,13 +370,12 @@ public class Graph {
                 }
             }
             double size_t = nodeProcessing.get(graph.get(i).getTo()-1).getMax_size() - before_queue;
-            nodeProcessing.get(graph.get(i).getTo()-1).setQueue(nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
             nodeProcessing.get(graph.get(i).getTo()-1).setTotal_size(nodeProcessing.get(graph.get(i).getTo()-1).getMax_size());
             matrix[graph.get(i).getFrom()-1][graph.get(i).getTo()-1] += size_t;
             int k = nodeProcessing.get(graph.get(i).getTo()-1).getNumber_of_threads() + 1;
             nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(k);
-            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue()/graph.get(i).getWeight());
-            nodeProcessing.get(graph.get(i).getTo()-1).setSize(nodeProcessing.get(graph.get(i).getTo()-1).getSize()+nodeProcessing.get(graph.get(i).getTo()-1).getMax_size_of_queue());
+            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(size_t/graph.get(i).getWeight());
+            nodeProcessing.get(graph.get(i).getTo()-1).setSize(nodeProcessing.get(graph.get(i).getTo()-1).getSize()+nodeProcessing.get(graph.get(i).getTo()-1).getMax_size());
             size_t  = checkIfOverload(size_t, i,size_array);
             System.out.println("from " + graph.get(i).getFrom()  + " to " + graph.get(i).getTo()  + ": "+ size_t);
             size_array[graph.get(i).getFrom()-1] -= size_t;
@@ -492,7 +401,7 @@ public class Graph {
             matrix[graph.get(i).getFrom()-1][graph.get(i).getTo()-1] += size;
             int k = nodeProcessing.get(graph.get(i).getTo()-1).getNumber_of_threads() + 1;
             nodeProcessing.get(graph.get(i).getTo()-1).setNumber_of_threads(k);
-            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(nodeProcessing.get(graph.get(i).getTo()-1).getSum_of_time() + 1/graph.get(i).getWeight());
+            nodeProcessing.get(graph.get(i).getTo()-1).setSum_of_time(size/graph.get(i).getWeight());
             nodeProcessing.get(graph.get(i).getTo()-1).setSize(nodeProcessing.get(graph.get(i).getTo()-1).getSize()+size);
             size  = checkIfOverload(size, i,size_array);
             System.out.println("from " + graph.get(i).getFrom()  + " to " + graph.get(i).getTo()  + ": "+ size);
@@ -519,6 +428,8 @@ public class Graph {
     }
     public void addGraphNode(int from, int to, double weight){
         graph.add(new GraphNode(from,to,weight));
+    }
+    public void addNodeParameter(boolean isWorking,  double max_size){ nodeProcessing.add(new NodeProcessing(isWorking,max_size));
     }
     public void deleteGraphNode(int i){
         graph.remove(i);

@@ -4,16 +4,23 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Graph g = new Graph(5,9);
+        Graph g = new Graph(5,11);
         g.addGraphNode(1,2,20);
         g.addGraphNode(1,3,20);
         g.addGraphNode(1,4,20);
+        g.addGraphNode(2,1,20);
         g.addGraphNode(2,4,20);
         g.addGraphNode(2,5,40);
         g.addGraphNode(3,2,10);
         g.addGraphNode(3,4,10);
         g.addGraphNode(3,5,20);
+        g.addGraphNode(4,1,20);
         g.addGraphNode(4,5,30);
+        g.addNodeParameter(true,1000);
+        g.addNodeParameter(true, 29);
+        g.addNodeParameter(true,3);
+        g.addNodeParameter(true,6);
+        g.addNodeParameter(true,1000);
         Scanner s = new Scanner(System.in);
         System.out.println("Введите входной объем данных: ");
         double V = s.nextDouble();
